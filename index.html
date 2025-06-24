@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets At Home - Measurement Strategy Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow: hidden;
+        }
+
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.5s ease-in-out;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .slide.prev {
+            transform: translateX(-100%);
+        }
+
+        .slide-header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px 30px;
+            margin: -40px -40px 30px -40px;
+            border-radius: 0;
+        }
+
+        .slide-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .slide-header h2 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .slide-header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .slide-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            height: 100%;
+        }
+
+        .three-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid #007bff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .metric-card h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .metric-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .metric-card li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .metric-card li:before {
+            content: "▶";
+            color: #007bff;
+            position: absolute;
+            left: 0;
+            font-size: 0.8em;
+        }
+
+        .north-star-metric {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .north-star-metric h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .kpi-category {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-category:hover {
+            border-color: #007bff;
+            box-shadow: 0 5px 20px rgba(0,123,255,0.1);
+        }
+
+        .kpi-category h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+
+        .framework-diagram {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+            border: 3px solid #007bff;
+        }
+
+        .process-step {
+            display: inline-block;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 25px;
+            margin: 10px;
+            border-radius: 25px;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        }
+
+        .implementation-phase {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 5px solid #ffc107;
+        }
+
+        .implementation-phase h4 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .pets-brand {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .success-metric {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .success-metric h4 {
+            color: #155724;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="slide-counter">
+            <span id="current-slide">1</span> / <span id="total-slides">12</span>
+        </div>
+
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <div class="slide-header">
+                <h1><span class="pets-brand">Pets At Home</span></h1>
+                <h2>Measurement Strategy Framework</h2>
+                <p>Driving Performance Through Data-Driven Insights</p>
+            </div>
+            <div class="slide-content">
+                <div class="highlight-box">
+                    <h3>Executive Presentation</h3>
+                    <p style="font-size: 1.2em; margin-top: 15px;">A comprehensive framework to measure, analyze, and optimize performance across all business dimensions</p>
+                </div>
+                <div class="two-column" style="margin-top: 30px;">
+                    <div>
+                        <h3 style="color: #2c3e50; margin-bottom: 20px;">Key Objectives</h3>
+                        <ul style="list-style: none; font-size: 1.1em;">
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">🎯</span>
+                                Align measurement with strategic goals
+                            </li>
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">📊</span>
+                                Enable data-driven decision making
+                            </li>
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">🚀</span>
+                                Drive operational excellence
+                            </li>
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">💡</span>
+                                Optimize customer experience
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 style="color: #2c3e50; margin-bottom: 20px;">Framework Benefits</h3>
+                        <ul style="list-style: none; font-size: 1.1em;">
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">✓</span>
+                                Comprehensive performance visibility
+                            </li>
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">✓</span>
+                                Actionable insights and reporting
+                            </li>
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">✓</span>
+                                Benchmarking and optimization
+                            </li>
+                            <li style="margin: 10px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">✓</span>
+                                Strategic alignment across teams
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Strategic Objectives -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Strategic Objectives & Key Results</h2>
+                <p>Aligning measurement with business strategy</p>
+            </div>
+            <div class="slide-content">
+                <div class="framework-diagram">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">Five Strategic Pillars</h3>
+                    <div class="process-step">Customer Experience Excellence</div>
+                    <div class="process-step">Omnichannel Growth</div>
+                    <div class="process-step">Market Leadership</div>
+                    <div class="process-step">Operational Excellence</div>
+                    <div class="process-step">Innovation & Services</div>
+                </div>
+                <div class="two-column">
+                    <div class="metric-card">
+                        <h3>Customer Experience Excellence</h3>
+                        <p>Deliver exceptional pet care experiences across all touchpoints</p>
+                        <ul style="margin-top: 15px;">
+                            <li>Net Promoter Score optimization</li>
+                            <li>Customer satisfaction improvement</li>
+                            <li>Service quality enhancement</li>
+                            <li>Complaint resolution efficiency</li>
+                        </ul>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Omnichannel Growth</h3>
+                        <p>Seamlessly integrate online and offline customer journeys</p>
+                        <ul style="margin-top: 15px;">
+                            <li>Cross-channel conversion optimization</li>
+                            <li>Click-and-collect adoption</li>
+                            <li>Digital engagement growth</li>
+                            <li>Channel integration effectiveness</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: North Star Metrics -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>North Star Metrics</h2>
+                <p>Key indicators that drive overall business success</p>
+            </div>
+            <div class="slide-content">
+                <div class="metrics-grid">
+                    <div class="north-star-metric">
+                        <h3>Customer Lifetime Value</h3>
+                        <p>Long-term value creation through pet ownership lifecycle</p>
+                    </div>
+                    <div class="north-star-metric">
+                        <h3>Net Promoter Score</h3>
+                        <p>Customer advocacy and satisfaction measurement</p>
+                    </div>
+                    <div class="north-star-metric">
+                        <h3>Market Share</h3>
+                        <p>Position in UK pet care category</p>
+                    </div>
+                    <div class="north-star-metric">
+                        <h3>Total Revenue Growth</h3>
+                        <p>Overall business performance indicator</p>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <h3>Why These Metrics Matter</h3>
+                    <p>These North Star metrics provide a holistic view of business health, combining customer satisfaction, market position, and financial performance to guide strategic decision-making.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: KPI Categories Overview -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Key Performance Indicator Categories</h2>
+                <p>Comprehensive measurement across all business dimensions</p>
+            </div>
+            <div class="slide-content">
+                <div class="three-column">
+                    <div class="kpi-category">
+                        <h4>Financial Performance</h4>
+                        <ul>
+                            <li>Revenue growth</li>
+                            <li>Profitability metrics</li>
+                            <li>Cost management</li>
+                            <li>ROI measurement</li>
+                        </ul>
+                    </div>
+                    <div class="kpi-category">
+                        <h4>Customer Experience</h4>
+                        <ul>
+                            <li>Acquisition metrics</li>
+                            <li>Retention & loyalty</li>
+                            <li>Satisfaction scores</li>
+                            <li>Engagement levels</li>
+                        </ul>
+                    </div>
+                    <div class="kpi-category">
+                        <h4>Omnichannel Performance</h4>
+                        <ul>
+                            <li>Digital metrics</li>
+                            <li>Store performance</li>
+                            <li>Cross-channel integration</li>
+                            <li>Channel optimization</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="three-column" style="margin-top: 20px;">
+                    <div class="kpi-category">
+                        <h4>Product & Category</h4>
+                        <ul>
+                            <li>Category performance</li>
+                            <li>Product innovation</li>
+                            <li>Private label success</li>
+                            <li>Inventory optimization</li>
+                        </ul>
+                    </div>
+                    <div class="kpi-category">
+                        <h4>Operational Excellence</h4>
+                        <ul>
+                            <li>Supply chain efficiency</li>
+                            <li>Store operations</li>
+                            <li>Staff productivity</li>
+                            <li>Quality compliance</li>
+                        </ul>
+                    </div>
+                    <div class="kpi-category">
+                        <h4>Services Performance</h4>
+                        <ul>
+                            <li>Veterinary services</li>
+                            <li>Grooming services</li>
+                            <li>Training programs</li>
+                            <li>Service quality</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Financial Performance -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Financial Performance Metrics</h2>
+                <p>Revenue, profitability, and financial health indicators</p>
+            </div>
+            <div class="slide-content">
+                <div class="two-column">
+                    <div class="metric-card">
+                        <h3>Revenue Metrics</h3>
+                        <ul>
+                            <li>Total Revenue (Monthly/Quarterly/Annual)</li>
+                            <li>Like-for-like sales growth</li>
+                            <li>Average transaction value</li>
+                            <li>Revenue per square foot</li>
+                            <li>Online revenue growth rate</li>
+                            <li>Services revenue (grooming, vet, training)</li>
+                        </ul>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Profitability Metrics</h3>
+                        <ul>
+                            <li>Gross margin by category</li>
+                            <li>EBITDA margin</li>
+                            <li>Net profit margin</li>
+                            <li>Operating leverage ratio</li>
+                            <li>Customer acquisition cost (CAC)</li>
+                            <li>Return on marketing investment (ROMI)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <h3>Key Focus Areas</h3>
+                    <p><strong>Services Revenue Growth:</strong> Tracking the expansion of high-margin services like veterinary care and grooming</p>
+                    <p><strong>Omnichannel Revenue:</strong> Measuring the contribution of integrated online and offline sales</p>
+                    <p><strong>Category Performance:</strong> Understanding profitability across pet food, accessories, and healthcare products</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Customer Experience Metrics -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Customer Experience & Loyalty Metrics</h2>
+                <p>Measuring customer satisfaction and long-term relationships</p>
+            </div>
+            <div class="slide-content">
+                <div class="three-column">
+                    <div class="metric-card">
+                        <h3>Acquisition</h3>
+                        <ul>
+                            <li>New customer acquisition rate</li>
+                            <li>Customer acquisition cost by channel</li>
+                            <li>Conversion rate (online/in-store)</li>
+                            <li>Lead-to-customer conversion</li>
+                        </ul>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Retention & Loyalty</h3>
+                        <ul>
+                            <li>Customer retention rate</li>
+                            <li>Repeat purchase rate</li>
+                            <li>VIP membership growth</li>
+                            <li>Customer lifetime value</li>
+                        </ul>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Satisfaction</h3>
+                        <ul>
+                            <li>Net Promoter Score (NPS)</li>
+                            <li>Customer Satisfaction Score (CSAT)</li>
+                            <li>Customer Effort Score (CES)</li>
+                            <li>Review ratings analysis</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <h3>Pet-Specific Considerations</h3>
+                    <p><strong>Lifecycle Approach:</strong> Measuring engagement across pet lifecycle stages (puppy/kitten, adult, senior)</p>
+                    <p><strong>Multi-Pet Households:</strong> Understanding customers with multiple pets and cross-selling opportunities</p>
+                    <p><strong>Seasonal Patterns:</strong> Tracking seasonal variations in pet care needs and purchasing behavior</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Services Performance -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Services Performance Metrics</h2>
+                <p>Specialized services driving customer loyalty and revenue</p>
+            </div>
+            <div class="slide-content">
+                <div class="three-column">
+                    <div class="metric-card">
+                        <h3>Veterinary Services</h3>
+                        <ul>
+                            <li>Appointment utilization rate</li>
+                            <li>Revenue per consultation</li>
+                            <li>Customer satisfaction scores</li>
+                            <li>Preventive care plan uptake</li>
+                            <li>Follow-up appointment rates</li>
+                        </ul>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Grooming Services</h3>
+                        <ul>
+                            <li>Booking conversion rate</li>
+                            <li>Revenue per grooming session</li>
+                            <li>Customer retention rate</li>
+                            <li>Service quality scores</li>
+                            <li>Repeat booking frequency</li>
+                        </ul>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Training Services</h3>
+                        <ul>
+                            <li>Class enrollment rates</li>
+                            <li>Training completion rates</li>
+                            <li>Customer success outcomes</li>
+                            <li>Trainer utilization rates</li>
+                            <li>Advanced course progression</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box">
+                    <h3>Services Strategy Impact</h3>
+                    <p>Services create stronger customer relationships, increase visit frequency, and provide higher margin revenue streams. These metrics help optimize service delivery and expansion opportunities.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Measurement Methodology -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Measurement Methodology</h2>
+                <p>Balanced Scorecard approach for comprehensive performance view</p>
+            </div>
+            <div class="slide-content">
+                <div class="framework-diagram">
+                    <h3 style="margin-bottom: 20px;">Balanced Scorecard Framework</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                        <div class="metric-card">
+                            <h3>Financial Perspective</h3>
+                            <p>Revenue growth, profitability, cost management, and efficiency ratios</p>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Customer Perspective</h3>
+                            <p>Customer satisfaction, loyalty, market share, and brand perception</p>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Internal Process</h3>
+                            <p>Operational efficiency, quality metrics, innovation, and service delivery</p>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Learning & Growth</h3>
+                            <p>Employee satisfaction, capability development, and technology advancement</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="two-column" style="margin-top: 20px;">
+                    <div>
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">Customer Segmentation</h3>
+                        <ul style="list-style: none;">
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">🐕</span>
+                                Dog vs. Cat vs. Other pet owners
+                            </li>
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">👶</span>
+                                New vs. experienced pet owners
+                            </li>
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">💰</span>
+                                High-value vs. average customers
+                            </li>
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #007bff;">🌟</span>
+                                VIP members vs. non-members
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 style="color: #2c3e50; margin-bottom: 15px;">Geographic Analysis</h3>
+                        <ul style="list-style: none;">
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">📍</span>
+                                Regional performance comparison
+                            </li>
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">🏙️</span>
+                                Urban vs. suburban performance
+                            </li>
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">🏪</span>
+                                Local market competition analysis
+                            </li>
+                            <li style="margin: 8px 0; padding-left: 20px; position: relative;">
+                                <span style="position: absolute; left: 0; color: #28a745;">📊</span>
+                                Store catchment area insights
+                            </li>
+                        </ul> 
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Reporting Framework -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Reporting & Analytics Framework</h2>
+                <p>Multi-level dashboards and reporting cadence</p>
+            </div>
+            <div class="slide-content">
+                <div class="two-column">
+                    <div>
+                        <h3 style="color: #2c3e50; margin-bottom: 20px;">Dashboard Hierarchy</h3>
+                        <div class="metric-card">
+                            <h3>Executive Dashboard</h3>
+                            <ul>
+                                <li>North Star metrics</li>
+                                <li>Strategic KPI trends</li>
+                                <li>Exception reporting</li>
+                                <li>Performance alerts</li>
+                            </ul>
+                        </div>
+                        <div class="metric-card">
+                            <h3>Operational Dashboards</h3>
+                            <ul>
+                                <li>Daily operational metrics</li>
+                                <li>Real-time monitoring</li>
+                                <li>Department-specific KPIs</li>
+                                <li>Actionable insights</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: #2c3e50; margin-bottom: 20px;">Reporting Cadence</h3>
+                        <div class="kpi-category">
+                            <h4>Daily Reports</h4>
+                            <p>Sales performance, operational exceptions, critical alerts</p>
+                        </div>
+                        <div class="kpi-category">
+                            <h4>Weekly Reports</h4>
+                            <p>Trend analysis, department KPIs, action tracking</p>
+                        </div>
+                        <div class="kpi-category">
+                            <h4>Monthly Reports</h4>
+                            <p>Business review, satisfaction updates, financial analysis</p>
+                        </div>
+                        <div class="kpi-category">
+                            <h4>Quarterly Reports</h4>
+                            <p>Strategic progress, market analysis, ROI assessment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Data Sources -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Data Sources & Integration</h2>
+                <p>Comprehensive data collection across all touchpoints</p>
+            </div>
+            
